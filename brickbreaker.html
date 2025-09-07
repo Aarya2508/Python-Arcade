@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Neon Brick Breaker</title>
+<style>
+:root{
+  --bg:#000000;
+  --c1:#fffd8d;
+  --c2:#5cbbee;
+  --c3:#64fce7;
+  --c4:#f56892;
+  --c5:#7c69e9;
+  --grid:#121212;
+}
+body{margin:0;display:flex;justify-content:center;align-items:flex-start;gap:20px;background:var(--bg);color:#fff;font-family:sans-serif;}
+canvas{background:linear-gradient(180deg,var(--grid),#080808);border-radius:12px;box-shadow:0 0 25px #000;}
+.panel{width:260px;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;}
+h1{text-align:center;font-size:18px;margin:8px 0;color:#fff;text-shadow:0 0 6px #fff;}
+.stat{display:flex;justify-content:space-between;margin:6px 0;padding:6px;background:rgba(255,255,255,0.1);border-radius:6px;}
+.btn{cursor:pointer;display:inline-block;margin:4px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.1);user-select:none;}
+.hs{max-height:150px;overflow:auto;margin-top:10px;}
+.hs-item{display:flex;justify-content:space-between;margin:2px 0;padding:4px;background:rgba(255,255,255,0.1);border-radius:6px;}
+input{width:100%;margin-top:4px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;}
+/* Game Over Overlay */
+#gameOverOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:10;display:none;}
+#gameOverContent{background:#121212;padding:20px;border-radius:12px;width:300px;text-align:center;box-shadow:0 0 25px #fff;position:relative;}
+#gameOverContent input[type=text]{width:80%;margin:10px 0;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;}
+#gameOverContent .btn{margin-top:10px;}
+#closeOverlay{position:absolute;top:8px;right:8px;padding:2px 8px;font-weight:bold;cursor:pointer;}
+</style>
+</head>
+<body>
+<canvas id="game" width="480" height="640"></canvas>
+<div class="panel">
+  <!-- Main Heading -->
+  <h1 style="font-size:20px; text-align:center; color:#fff; text-shadow:0 0 8px #fff; margin-bottom:10px;">Neon Brick Breaker</h1>
+  
+  <h1>Scoreboard</h1>
+  <div class="stat"><span>Score</span><b id="score">0</b></div>
+  <div class="stat"><span>Level</span><b id="level">1</b></div>
+  <div class="stat"><span>Lives</span><b id="lives">3</b></div>
+  <div style="text-align:center">
+    <div class="btn" id="start">Start</div>
+    <div class="btn" id="pause">Pause</div>
+    <div class="btn" id="reset">Reset</div>
+  </div>
+
+  <label>Ball Speed: <span id="speedVal">5</span></label>
+  <input type="range" id="speedSlider" min="2" max="12" step="1" value="5">
+
+  <label>Name</label><input id="name" placeholder="Enter name">
+  <label>Add score</label><input id="manual" type="number" placeholder="Enter score">
+  <div style="text-align:center">
+    <div class="btn" id="add">Add</div>
+    <div class="btn" id="clear">Clear</div>
+  </div>
+  <h1 style="font-size:15px;margin-top:12px">High Scores</h1>
+  <div id="hs" class="hs"></div>
+</div>
+
+<!-- Game Over Popup -->
+<div id="gameOverOverlay">
+  <div id="gameOverContent">
+    <div id="closeOverlay">✖</div>
+    <h2>Game Over</h2>
+    <p>Your Score: <span id="finalScore">0</span></p>
+    <input type="text" id="goName" placeholder="Enter name">
+    <div class="btn" id="goSubmit">Submit</div>
+  </div>
+</div>
+
+<script>
+const cvs=document.getElementById("game"),ctx=cvs.getContext("2d");
+const W=cvs.width,H=cvs.height;
+const COLORS=["--c1","--c2","--c3","--c4","--c5"].map(c=>getComputedStyle(document.documentElement).getPropertyValue(c).trim());
+
+let paddle={w:100,h:16,x:(W-100)/2,y:H-30,speed:7,color:COLORS[1]};
+let ball={x:W/2,y:H-50,r:8,vx:0,vy:0,speed:5,stuck:true,color:COLORS[2]};
+let bricks=[],rows=5,cols=8;
+let score=0,level=1,lives=3;
+let started=false,paused=false;
+
+const overlay=document.getElementById("gameOverOverlay");
+const finalScore=document.getElementById("finalScore");
+const speedSlider=document.getElementById("speedSlider");
+const speedVal=document.getElementById("speedVal");
+
+speedSlider.addEventListener("input",()=>{ball.speed=parseInt(speedSlider.value);speedVal.textContent=ball.speed;});
+
+function makeBricks(){
+  bricks=[];
+  let bw=(W-60)/cols,bh=20;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      bricks.push({x:30+c*bw,y:50+r*bh,w:bw-4,h:bh-4,color:COLORS[r%COLORS.length]});
+    }
+  }
+}
+
+function reset(){
+  score=0;level=1;lives=3;
+  paddle.x=(W-paddle.w)/2;
+  ball.x=W/2;ball.y=H-50;ball.vx=0;ball.vy=0;ball.stuck=true;
+  started=false;paused=false;
+  makeBricks();updateUI();draw();
+}
+
+function startGame(){if(!started){started=true;paused=false;loop();}}
+function pauseGame(){paused=!paused;}
+function launchBall(){if(ball.stuck){ball.vx=(Math.random()*2-1)*ball.speed;ball.vy=-ball.speed;ball.stuck=false;}}
+
+function update(){
+  if(!started||paused) return;
+  if(ball.stuck){ball.x=paddle.x+paddle.w/2;ball.y=paddle.y-ball.r-2;}
+  else{
+    ball.x+=ball.vx;ball.y+=ball.vy;
+    if(ball.x<ball.r||ball.x>W-ball.r) ball.vx*=-1;
+    if(ball.y<ball.r) ball.vy*=-1;
+    if(ball.y>H){lives--;resetBall();}
+  }
+  if(ball.y+ball.r>paddle.y && ball.x>paddle.x && ball.x<paddle.x+paddle.w && ball.vy>0){
+    let rel = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+    let angle = rel * Math.PI/3;
+    let speed = ball.speed;
+    ball.vx = speed * Math.sin(angle);
+    ball.vy = -speed * Math.cos(angle);
+  }
+  for(let i=bricks.length-1;i>=0;i--){
+    let b=bricks[i];
+    if(ball.x> b.x && ball.x< b.x+b.w && ball.y-ball.r< b.y+b.h && ball.y+ball.r> b.y){
+      ball.vy*=-1;bricks.splice(i,1);score+=10;break;
+    }
+  }
+  if(bricks.length===0){level++;rows++;makeBricks();resetBall();}
+}
+
+function resetBall(){
+  if(lives<=0){gameOver();return;}
+  ball.x=W/2;ball.y=H-50;ball.vx=0;ball.vy=0;ball.stuck=true;
+}
+
+function draw(){
+  ctx.fillStyle="black";ctx.fillRect(0,0,W,H);
+  for(let b of bricks){ctx.save();ctx.shadowBlur=15;ctx.shadowColor=b.color;ctx.fillStyle=b.color;ctx.fillRect(b.x,b.y,b.w,b.h);ctx.restore();}
+  ctx.save();ctx.shadowBlur=20;ctx.shadowColor=paddle.color;ctx.fillStyle=paddle.color;ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);ctx.restore();
+  ctx.save();ctx.shadowBlur=20;ctx.shadowColor=ball.color;ctx.fillStyle=ball.color;ctx.beginPath();ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+
+function loop(){update();draw();updateUI();requestAnimationFrame(loop);}
+function gameOver(){
+  started=false;
+  finalScore.textContent=score;
+  overlay.style.display="flex";
+}
+
+// Controls
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft"||e.key==="a") paddle.x=Math.max(0,paddle.x-paddle.speed);
+  if(e.key==="ArrowRight"||e.key==="d") paddle.x=Math.min(W-paddle.w,paddle.x+paddle.speed);
+  if(e.code==="Space") launchBall();
+});
+
+document.getElementById("start").onclick=startGame;
+document.getElementById("pause").onclick=pauseGame;
+document.getElementById("reset").onclick=reset;
+
+// Game Over buttons
+document.getElementById("goSubmit").onclick=()=>{
+  const name=document.getElementById("goName").value||"Player";
+  overlay.style.display="none";
+  saveHS(name);
+  resetBall();
+};
+
+// Cross button just closes overlay
+document.getElementById("closeOverlay").onclick = () => {
+    overlay.style.display = "none";
+};
+
+// High Scores
+function updateUI(){document.getElementById("score").textContent=score;document.getElementById("level").textContent=level;document.getElementById("lives").textContent=lives;}
+function loadHS(){return JSON.parse(localStorage.getItem("bb_hs")||"[]");}
+function renderHS(){const box=document.getElementById("hs");box.innerHTML="";loadHS().sort((a,b)=>b.score-a.score).forEach(h=>{let d=document.createElement("div");d.className="hs-item";d.innerHTML=`<span>${h.name}</span><span>${h.score}</span>`;box.appendChild(d);});}
+function saveHS(n){let hs=loadHS();hs.push({name:n,score});localStorage.setItem("bb_hs",JSON.stringify(hs));renderHS();}
+document.getElementById("add").onclick=()=>{let n=document.getElementById("name").value||"Player";let s=parseInt(document.getElementById("manual").value)||0;let hs=loadHS();hs.push({name:n,score:s});localStorage.setItem("bb_hs",JSON.stringify(hs));renderHS();};
+document.getElementById("clear").onclick=()=>{localStorage.removeItem("bb_hs");renderHS();};
+
+reset();renderHS();
+</script>
+</body>
+</html>

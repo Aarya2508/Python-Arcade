@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Neon Games</title>
+<style>
+:root{
+  --bg:#000000;
+  --c1:#fffd8d; /* Brick Breaker */
+  --c2:#5cbbee; /* Tetris */
+  --c3:#64fce7; /* Dodge Block */
+  --c4:#f56892;
+  --c5:#7c69e9;
+}
+body{
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  background:var(--bg);
+  color:#fff;
+  font-family:sans-serif;
+}
+h1{
+  font-size:40px;
+  text-align:center;
+  color:#fff;
+  text-shadow:0 0 10px #fff, 0 0 20px var(--c1), 0 0 30px var(--c2), 0 0 40px var(--c3);
+  margin-bottom:50px;
+}
+.btn{
+  display:block;
+  width:250px;
+  margin:20px;
+  padding:20px;
+  text-align:center;
+  font-size:22px;
+  text-decoration:none;
+  color:#fff;
+  border-radius:16px;
+  background:rgba(255,255,255,0.05);
+  transition:0.3s;
+  box-shadow:0 0 10px #fff;
+}
+
+/* Unique button glow colors */
+#brickbreaker{
+  box-shadow:0 0 15px var(--c1),0 0 30px var(--c1);
+}
+#brickbreaker:hover{
+  box-shadow:0 0 30px var(--c1),0 0 60px var(--c1);
+}
+
+#tetris{
+  box-shadow:0 0 15px var(--c2),0 0 30px var(--c2);
+}
+#tetris:hover{
+  box-shadow:0 0 30px var(--c2),0 0 60px var(--c2);
+}
+
+#dodgeblock{
+  box-shadow:0 0 15px var(--c3),0 0 30px var(--c3);
+}
+#dodgeblock:hover{
+  box-shadow:0 0 30px var(--c3),0 0 60px var(--c3);
+}
+</style>
+</head>
+<body>
+
+<h1>Games</h1>
+
+<a href="brickbreaker.html" id="brickbreaker" class="btn">Brick Breaker</a>
+<a href="Tetris.html" id="tetris" class="btn">Tetris</a>
+<a href="dodgeblock.html" id="dodgeblock" class="btn">Dodge Block</a>
+
+</body>
+</html>
