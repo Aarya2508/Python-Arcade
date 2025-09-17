@@ -7,10 +7,10 @@
   <style>
     :root{
       --bg:#000000; /* black */
-      --c1:#fffd8d; /* soft red */
-      --c2:#5cbbee; /* peach */
-      --c3:#64fce7; /* lemon */
-      --c4:#f56892; /* sky */
+      --c1:#fffd8d; /* yellow */
+      --c2:#5cbbee; /* blue */
+      --c3:#64fce7; /* cyan */
+      --c4:#f56892; /* pink */
       --c5:#7c69e9; /* lavender */
       --grid:#121212;
       --cell:40px;
@@ -56,7 +56,10 @@
       <input type="text" id="name" placeholder="Type a name...">
       <label>Manual score</label>
       <input type="number" id="manual" placeholder="Enter score to add">
-      <div style="margin-top:8px;display:flex;gap:8px"><div class="btn" id="add">Add score</div><div class="btn" id="clear">Clear</div></div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <div class="btn" id="add">Add score</div>
+        <div class="btn" id="clear">Clear</div>
+      </div>
 
       <h1 style="font-size:14px;margin-top:12px">High Scores</h1>
       <div class="hs" id="hs"></div>
@@ -71,126 +74,220 @@
 
     // colors from CSS variables
     const style = getComputedStyle(document.documentElement);
-    const COLORS = [style.getPropertyValue('--c1').trim(), style.getPropertyValue('--c2').trim(), style.getPropertyValue('--c3').trim(), style.getPropertyValue('--c4').trim(), style.getPropertyValue('--c5').trim()];
+    const COLORS = [
+      style.getPropertyValue('--c1').trim(),
+      style.getPropertyValue('--c2').trim(),
+      style.getPropertyValue('--c3').trim(),
+      style.getPropertyValue('--c4').trim(),
+      style.getPropertyValue('--c5').trim()
+    ];
 
     // player
-    const player = {w:50, h:50, x: (W/2)-25, y: H - 80, speed:8, color: style.getPropertyValue('--c1').trim() };
+    const player = {w:50, h:50, x:(W/2)-25, y:H-80, speed:8, color: style.getPropertyValue('--c1').trim()};
 
-    // obstacles array
+    // game state
     let obstacles = [];
-    let spawnTimer = 0, spawnInterval = 800; // ms
+    let spawnTimer = 0, spawnInterval = 800; 
     let gameLoop = null, started=false, paused=false;
-    let score = 0, level=1, timeElapsed = 0, startTime = null;
+    let score=0, level=1, timeElapsed=0, startTime=null;
 
     function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
-    function reset(){ obstacles=[]; spawnTimer=0; score=0; level=1; timeElapsed=0; startTime=null; player.x=(W/2)-player.w/2; document.getElementById('score').textContent='0'; document.getElementById('level').textContent='1'; document.getElementById('time').textContent='0s'; }
+   function reset(){
+  obstacles = [];
+  spawnTimer = 0;
+  score = 0;
+  level = 1;
+  timeElapsed = 0;
+  startTime = null;
+  player.x = (W/2) - player.w/2;
+  cancelAnimationFrame(gameLoop);
+  started = false;
+  paused = false;
+  document.getElementById('score').textContent='0';
+  document.getElementById('level').textContent='1';
+  document.getElementById('time').textContent='0s';
+}
 
-    function start(){ if(started && !paused) return; started=true; paused=false; startTime = startTime || Date.now(); if(gameLoop) cancelAnimationFrame(gameLoop); loop(); }
-    function togglePause(){ paused = !paused; if(!paused) loop(); }
+function start(){
+  if(started) return;
+  started = true;
+  paused = false;
+  score = 0;
+  level = 1;
+  timeElapsed = 0;
+  spawnTimer = 0;
+  startTime = Date.now();
+  player.x = (W/2) - player.w/2;
+  obstacles = [];
+  requestAnimationFrame(loop); // ✅ correct
+}
+
+
+    function togglePause(){ paused=!paused; if(!paused) loop(); }
 
     function spawnObstacle(){
-      const w = randInt(40,120);
-      const x = randInt(10, W - w -10);
-      const speed = 2 + Math.random()* (1 + level*0.5);
-      const color = COLORS[Math.floor(Math.random()*COLORS.length)];
-      obstacles.push({x, y:-60, w, h: randInt(30,80), speed, color});
+      const w=randInt(40,120);
+      const x=randInt(10, W-w-10);
+      const speed=2+Math.random()*(1+level*0.5);
+      const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+      obstacles.push({x, y:-60, w, h:randInt(30,80), speed, color});
     }
 
     function update(dt){
-      if(paused || !started) return;
-      // spawn
-      spawnTimer += dt;
-      const localInterval = Math.max(250, spawnInterval - (level-1)*60);
-      if(spawnTimer > localInterval){ spawnTimer = 0; spawnObstacle(); }
+      if(paused||!started) return;
+      spawnTimer+=dt;
+      const localInterval=Math.max(250, spawnInterval-(level-1)*60);
+      if(spawnTimer>localInterval){ spawnTimer=0; spawnObstacle(); }
 
-      // update obstacles
       for(let i=obstacles.length-1;i>=0;i--){
-        obstacles[i].y += obstacles[i].speed * (dt/16);
-        if(obstacles[i].y > H + 100) { obstacles.splice(i,1); score += 10; }
+        obstacles[i].y+=obstacles[i].speed*(dt/16);
+        if(obstacles[i].y>H+100){ obstacles.splice(i,1); score+=10; }
       }
 
-      // collision
-      for(const o of obstacles){ if(rectIntersect(player, o)) { gameOver(); return; } }
+      for(const o of obstacles){ if(rectIntersect(player,o)){ gameOver(); return; } }
 
-      // level from score
-      level = Math.floor(score/200) + 1;
-      document.getElementById('score').textContent = score;
-      document.getElementById('level').textContent = level;
-      timeElapsed = Math.floor((Date.now() - startTime)/1000);
-      document.getElementById('time').textContent = timeElapsed + 's';
+      level=Math.floor(score/200)+1;
+      document.getElementById('score').textContent=score;
+      document.getElementById('level').textContent=level;
+      timeElapsed=Math.floor((Date.now()-startTime)/1000);
+      document.getElementById('time').textContent=timeElapsed+'s';
     }
 
-    function rectIntersect(a,b){ return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h); }
+    function rectIntersect(a,b){ 
+      return !(a.x+a.w<b.x || a.x>b.x+b.w || a.y+a.h<b.y || a.y>b.y+b.h); 
+    }
 
-    function drawRoundedRect(x,y,w,h,r,ctx){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
+    function drawRoundedRect(x,y,w,h,r,ctx){ 
+      ctx.beginPath(); 
+      ctx.moveTo(x+r,y); 
+      ctx.arcTo(x+w,y,x+w,y+h,r); 
+      ctx.arcTo(x+w,y+h,x,y+h,r); 
+      ctx.arcTo(x,y+h,x,y,r); 
+      ctx.arcTo(x,y,x+w,y,r); 
+      ctx.closePath(); 
+      ctx.fill(); 
+    }
 
     function draw(){
-      // background
       ctx.clearRect(0,0,W,H);
-      // subtle grid
-      ctx.fillStyle = '#040404'; ctx.fillRect(0,0,W,H);
-      for(let gx=0;gx<W;gx+=40){ ctx.fillStyle = 'rgba(255,255,255,0.01)'; ctx.fillRect(gx,0,1,H); }
+      ctx.fillStyle='#040404'; ctx.fillRect(0,0,W,H);
+      for(let gx=0;gx<W;gx+=40){ 
+        ctx.fillStyle='rgba(255,255,255,0.01)'; 
+        ctx.fillRect(gx,0,1,H); 
+      }
 
-      // draw player with neon glow
-      ctx.save(); ctx.shadowBlur=24; ctx.shadowColor = player.color; ctx.fillStyle = player.color; drawRoundedRect(player.x, player.y, player.w, player.h, 8, ctx); ctx.restore();
-      // player gloss
-      ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle = '#fff'; ctx.fillRect(player.x+8, player.y+6, player.w-16, 12); ctx.restore();
+      ctx.save(); 
+      ctx.shadowBlur=24; ctx.shadowColor=player.color; ctx.fillStyle=player.color; 
+      drawRoundedRect(player.x, player.y, player.w, player.h, 8, ctx); 
+      ctx.restore();
 
-      // obstacles
-      for(const o of obstacles){ ctx.save(); ctx.shadowBlur=20; ctx.shadowColor=o.color; ctx.fillStyle = o.color; drawRoundedRect(o.x, o.y, o.w, o.h, 6, ctx); ctx.restore(); }
+      ctx.save(); 
+      ctx.globalAlpha=0.12; ctx.fillStyle='#fff'; 
+      ctx.fillRect(player.x+8, player.y+6, player.w-16, 12); 
+      ctx.restore();
 
-      // HUD
-      ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(8,8,110,40); ctx.fillStyle='#fff'; ctx.font='12px Inter, Arial'; ctx.fillText('Score: '+score, 14, 26);
+      for(const o of obstacles){ 
+        ctx.save(); 
+        ctx.shadowBlur=20; ctx.shadowColor=o.color; ctx.fillStyle=o.color; 
+        drawRoundedRect(o.x, o.y, o.w, o.h, 6, ctx); 
+        ctx.restore(); 
+      }
+
+      // HUD box
+      ctx.fillStyle='rgba(255,255,255,0.04)'; 
+      ctx.fillRect(8,8,130,60); 
+      ctx.fillStyle='#fff'; ctx.font='12px Inter, Arial';
+      ctx.fillText('Score: '+score,14,24);
+      ctx.fillText('Lvl: '+level,14,40);
+      ctx.fillText('Time: '+timeElapsed+'s',14,56);
     }
 
-    let last = performance.now();
+    let last=performance.now();
     function loop(ts){
-      gameLoop = requestAnimationFrame(loop);
-      const dt = ts - last; last = ts;
+      gameLoop=requestAnimationFrame(loop);
+      const dt=ts-last; last=ts;
       if(!paused && started){ update(dt); }
       draw();
     }
 
     function gameOver(){
-      paused = true; started = false; cancelAnimationFrame(gameLoop);
-      // save to highscore automatically
-      saveHS(prompt('Game Over — enter name to save score','') || 'Player');
-      alert('Game Over — score: '+score);
+      paused=true; started=false; cancelAnimationFrame(gameLoop);
+      const name=prompt('Game Over!\nEnter name to save score:','')||'Player';
+      saveHS(name);
+      alert(`Game Over — Score: ${score}`);
     }
 
     // controls
     document.addEventListener('keydown', e=>{
-      if(e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a'){ player.x = Math.max(6, player.x - player.speed); }
-      else if(e.key === 'ArrowRight' || e.key.toLowerCase() === 'd'){ player.x = Math.min(W - player.w -6, player.x + player.speed); }
-      else if(e.key.toLowerCase() === 'p'){ togglePause(); }
+      if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a'){ player.x=Math.max(6, player.x-player.speed); }
+      else if(e.key==='ArrowRight'||e.key.toLowerCase()==='d'){ player.x=Math.min(W-player.w-6, player.x+player.speed); }
+      else if(e.key.toLowerCase()==='p'){ togglePause(); }
     });
 
-    // touch: tap left/right
+    // touch
     canvas.addEventListener('touchstart', e=>{
-      const t = e.touches[0]; const rect = canvas.getBoundingClientRect(); const x = t.clientX - rect.left;
-      if(x < W/2) player.x = Math.max(6, player.x - player.speed*3); else player.x = Math.min(W - player.w -6, player.x + player.speed*3);
+      const t=e.touches[0]; 
+      const rect=canvas.getBoundingClientRect(); 
+      const x=t.clientX-rect.left;
+      if(x<W/2) player.x=Math.max(6, player.x-player.speed*2); 
+      else player.x=Math.min(W-player.w-6, player.x+player.speed*2);
     });
 
-    // mouse click also moves
-    canvas.addEventListener('mousedown', e=>{ const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if(x < W/2) player.x = Math.max(6, player.x - player.speed*3); else player.x = Math.min(W - player.w -6, player.x + player.speed*3); });
+    // mouse click
+    canvas.addEventListener('mousedown', e=>{
+      const rect=canvas.getBoundingClientRect(); 
+      const x=e.clientX-rect.left;
+      if(x<W/2) player.x=Math.max(6, player.x-player.speed*2); 
+      else player.x=Math.min(W-player.w-6, player.x+player.speed*2);
+    });
 
     // buttons
-    document.getElementById('start').addEventListener('click', ()=>{ start(); });
-    document.getElementById('pause').addEventListener('click', ()=>{ togglePause(); });
-    document.getElementById('reset').addEventListener('click', ()=>{ reset(); draw(); });
+    document.getElementById('start').addEventListener('click', ()=>start());
+    document.getElementById('pause').addEventListener('click', ()=>togglePause());
+    document.getElementById('reset').addEventListener('click', ()=>{reset(); draw();});
 
-    // high scores (manual add + auto-save)
-    function loadHS(){ return JSON.parse(localStorage.getItem('neon_dodge_hs') || '[]'); }
-    function renderHS(){ const box = document.getElementById('hs'); box.innerHTML=''; const hs = loadHS(); hs.sort((a,b)=>b.score-a.score).forEach(it=>{ const el = document.createElement('div'); el.className='hs-item'; el.innerHTML = `<div>${escapeHtml(it.name)}</div><div>${it.score}</div>`; box.appendChild(el); }); }
-    function saveHS(name){ const hs = loadHS(); hs.push({name: name || document.getElementById('name').value || 'Player', score}); localStorage.setItem('neon_dodge_hs', JSON.stringify(hs)); renderHS(); }
-    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    // high scores
+    function loadHS(){ return JSON.parse(localStorage.getItem('neon_dodge_hs')||'[]'); }
+    function renderHS(){ 
+      const box=document.getElementById('hs'); 
+      box.innerHTML=''; 
+      const hs=loadHS(); 
+      hs.sort((a,b)=>b.score-a.score).forEach(it=>{
+        const el=document.createElement('div'); 
+        el.className='hs-item'; 
+        el.innerHTML=`<div>${escapeHtml(it.name)}</div><div>${it.score}</div>`; 
+        box.appendChild(el); 
+      }); 
+    }
+    function saveHS(name){ 
+      const hs=loadHS(); 
+      hs.push({name:name||document.getElementById('name').value||'Player', score}); 
+      hs.sort((a,b)=>b.score-a.score); 
+      localStorage.setItem('neon_dodge_hs', JSON.stringify(hs)); 
+      renderHS(); 
+    }
+    function escapeHtml(s){ 
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
+    }
 
-    document.getElementById('add').addEventListener('click', ()=>{ const n = document.getElementById('name').value || 'Player'; const sc = parseInt(document.getElementById('manual').value) || 0; const hs = loadHS(); hs.push({name:n, score:sc}); localStorage.setItem('neon_dodge_hs', JSON.stringify(hs)); renderHS(); });
-    document.getElementById('clear').addEventListener('click', ()=>{ localStorage.removeItem('neon_dodge_hs'); renderHS(); });
+    document.getElementById('add').addEventListener('click', ()=>{
+      const n=document.getElementById('name').value||'Player'; 
+      const sc=parseInt(document.getElementById('manual').value)||0; 
+      const hs=loadHS(); 
+      hs.push({name:n, score:sc}); 
+      hs.sort((a,b)=>b.score-a.score);
+      localStorage.setItem('neon_dodge_hs', JSON.stringify(hs)); 
+      renderHS(); 
+    });
+    document.getElementById('clear').addEventListener('click', ()=>{
+      localStorage.removeItem('neon_dodge_hs'); 
+      renderHS(); 
+    });
 
     // init
     reset(); renderHS(); draw();
   </script>
 </body>
 </html>
+
