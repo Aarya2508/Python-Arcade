@@ -7,11 +7,9 @@
 <style>
 :root{
   --bg:#000000;
-  --c1:#fffd8d; /* Brick Breaker */
-  --c2:#5cbbee; /* Tetris */
-  --c3:#64fce7; /* Dodge Block */
-  --c4:#f56892;
-  --c5:#7c69e9;
+  --pink:#f56892;
+  --turquoise:#40e0d0;
+  --blue:#5cbbee;
 }
 body{
   margin:0;
@@ -28,7 +26,7 @@ h1{
   font-size:40px;
   text-align:center;
   color:#fff;
-  text-shadow:0 0 10px #fff, 0 0 20px var(--c1), 0 0 30px var(--c2), 0 0 40px var(--c3);
+  text-shadow:0 0 10px #fff, 0 0 20px var(--pink), 0 0 30px var(--turquoise), 0 0 40px var(--blue);
   margin-bottom:50px;
 }
 .btn{
@@ -43,29 +41,28 @@ h1{
   border-radius:16px;
   background:rgba(255,255,255,0.05);
   transition:0.3s;
-  box-shadow:0 0 10px #fff;
 }
 
-/* Unique button glow colors */
-#brickbreaker{
-  box-shadow:0 0 15px var(--c1),0 0 30px var(--c1);
+/* Individual button colors */
+#brickbreaker {
+  box-shadow:0 0 15px var(--pink),0 0 30px var(--pink);
 }
-#brickbreaker:hover{
-  box-shadow:0 0 30px var(--c1),0 0 60px var(--c1);
-}
-
-#tetris{
-  box-shadow:0 0 15px var(--c2),0 0 30px var(--c2);
-}
-#tetris:hover{
-  box-shadow:0 0 30px var(--c2),0 0 60px var(--c2);
+#brickbreaker:hover {
+  box-shadow:0 0 30px var(--pink),0 0 60px var(--pink);
 }
 
-#dodgeblock{
-  box-shadow:0 0 15px var(--c3),0 0 30px var(--c3);
+#tetris {
+  box-shadow:0 0 15px var(--turquoise),0 0 30px var(--turquoise);
 }
-#dodgeblock:hover{
-  box-shadow:0 0 30px var(--c3),0 0 60px var(--c3);
+#tetris:hover {
+  box-shadow:0 0 30px var(--turquoise),0 0 60px var(--turquoise);
+}
+
+#dodgeblock {
+  box-shadow:0 0 15px var(--blue),0 0 30px var(--blue);
+}
+#dodgeblock:hover {
+  box-shadow:0 0 30px var(--blue),0 0 60px var(--blue);
 }
 </style>
 </head>
@@ -79,3 +76,4 @@ h1{
 
 </body>
 </html>
+
