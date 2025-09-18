@@ -136,19 +136,10 @@ function update(){
   if(bricks.length===0){level++;rows++;makeBricks();resetBall();}
 }
 
-function resetBall() {
-  if (lives <= 0) {
-    gameOver();
-    return;
-  }
-  ball.x = W / 2;
-  ball.y = H - 50;
-  ball.vx = 0;
-  ball.vy = 0;
-  ball.stuck = true;
-
-  
-
+function resetBall(){
+  if(lives<=0){gameOver();return;}
+  ball.x=W/2;ball.y=H-50;ball.vx=0;ball.vy=0;ball.stuck=true;
+}
 
 function draw(){
   ctx.fillStyle="black";ctx.fillRect(0,0,W,H);
@@ -191,7 +182,7 @@ document.getElementById("closeOverlay").onclick = () => {
 // High Scores
 function updateUI(){document.getElementById("score").textContent=score;document.getElementById("level").textContent=level;document.getElementById("lives").textContent=lives;}
 function loadHS(){return JSON.parse(localStorage.getItem("bb_hs")||"[]");}
-function renderHS(){const box=document.getElementById("hs");box.innerHTML="";loadHS().sort((a,b)=>b.score-a.score).forEach(h=>{let d=document.createElement("div");d.className="hs-item";d.innerHTML=`<span>${h.name}</span><span>${h.score}</span>`;box.appendChild(d);});}
+function renderHS(){const box=document.getElementById("hs");box.innerHTML="";loadHS().sort((a,b)=>b.score-a.score).forEach(h=>{let d=document.createElement("div");d.className="hs-item";d.innerHTML=<span>${h.name}</span><span>${h.score}</span>;box.appendChild(d);});}
 function saveHS(n){let hs=loadHS();hs.push({name:n,score});localStorage.setItem("bb_hs",JSON.stringify(hs));renderHS();}
 document.getElementById("add").onclick=()=>{let n=document.getElementById("name").value||"Player";let s=parseInt(document.getElementById("manual").value)||0;let hs=loadHS();hs.push({name:n,score:s});localStorage.setItem("bb_hs",JSON.stringify(hs));renderHS();};
 document.getElementById("clear").onclick=()=>{localStorage.removeItem("bb_hs");renderHS();};
@@ -200,4 +191,3 @@ reset();renderHS();
 </script>
 </body>
 </html>
-
