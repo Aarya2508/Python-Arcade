@@ -136,10 +136,19 @@ function update(){
   if(bricks.length===0){level++;rows++;makeBricks();resetBall();}
 }
 
-function resetBall(){
-  if(lives<=0){gameOver();return;}
-  ball.x=W/2;ball.y=H-50;ball.vx=0;ball.vy=0;ball.stuck=true;
-}
+function resetBall() {
+  if (lives <= 0) {
+    gameOver();
+    return;
+  }
+  ball.x = W / 2;
+  ball.y = H - 50;
+  ball.vx = 0;
+  ball.vy = 0;
+  ball.stuck = true;
+
+  
+
 
 function draw(){
   ctx.fillStyle="black";ctx.fillRect(0,0,W,H);
@@ -191,3 +200,4 @@ reset();renderHS();
 </script>
 </body>
 </html>
+
